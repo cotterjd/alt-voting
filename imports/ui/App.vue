@@ -1,8 +1,12 @@
 <template>
   <div>
-    <button @click="startVote()">Simulate Round {{round}}</button>
+    <button @click="startVote()">Simulate Next Round</button>
     <div style="display: flex">
       <hello v-for="key in Object.keys(votes)" :voter="key" :picks="votes[key]" />
+      <div>
+        <div v-for="key in Object.keys(countObj)">{{key}}: {{countObj[key]}}</div>
+        <div v-for="loser in losers"><s>{{loser}}</s></div>
+      </div>
     </div>
   </div>
 </template>
@@ -20,53 +24,55 @@ export default {
   },
   data: () => ({
     winner: ``,
-    round: 1,
     votes: {},
+    countObj: {},
+    losers: [],
     VoteString: ``,
   }),
   mounted () {
-    this.votes = {
-      joe: [`Libertarian`, `Democrat`, `Republican`, `Green Party`],
-      paul: [`Democrat`, `Libertarian`, `Republican`, `Green Party`],
+    const initialVotes = {
+      joe: [`Republican`, `Democrat`, `Libertarian`, `Green Party`],
+      paul: [`Green Party`, `Libertarian`, `Republican`, `Democrat`],
       dan: [`Republican`, `Libertarian`, `Democrat`, `Green Party`],
       steve: [`Libertarian`, `Republican`, `Green Party`, `Democrat`],
-      pauline: [`Democrat`, `Green Party`, `Republican`, `Liberatrian`],
-      jessica: [`Green Party`, `Demogract`, `Libertarian`, `Republican`],
-      bob: [`Green Party`, `Republican`, `Democrat`, `Liberatarian`],
+      pauline: [`Democrat`, `Green Party`, `Republican`, `Libertarian`],
+      jessica: [`Green Party`, `Democrat`, `Libertarian`, `Republican`],
+      bob: [`Green Party`, `Republican`, `Democrat`, `Libertarian`],
     }
+    this.votes = initialVotes
+    this.countObj = getCountObj(initialVotes) 
   },
   computed: {},
   methods: {
     calcVotes (votesObj) {
       const topVotes = getTopVotes(votesObj)
       const [winner, losers] = getLowestAndHighest(topVotes)
+      const newLosers = R.uniq([...this.losers, ...losers])
+      console.log(newLosers)
       if (winner) this.winner = winner
-      return Object.keys(votesObj).reduce((acc, voter) => {
-        const voterPicks = votesObj[voter]
-        if (losers.includes(voterPicks[0])) return { ...acc, [voter]: voterPicks.slice(1) }
-        return { ...acc, [voter]: voterPicks }
-      }, {})
+      this.losers = newLosers
+      return Object.keys(votesObj).reduce((acc, voter) => ({ ...acc, [voter]: getUpdatedVoterPicks(newLosers, votesObj[voter])}), {})
     },
     startVote () {
-      // setTimeout(() => {
-        if (!this.winner) {
-          this.round = this.round + 1
-          // const countObj = updateVoteString(newVotes)
-          // console.log(countObj)
-          const newVotes = this.calcVotes(this.votes)
-          this.votes = newVotes
-          // this.startVote()
-        }
-      // }, 2000)
+      if (!this.winner) {
+        const newVotes = this.calcVotes(this.votes)
+        this.votes = newVotes
+        const countObj = getCountObj(newVotes)
+        this.countObj = countObj
+      }
     },
     // {} -> `` 
   }
 }
-// {} -> `` 
-function updateVoteString (votesObj) {
+function getUpdatedVoterPicks (losers, voterPicks) {
+  if (!losers.includes(voterPicks[0])) return voterPicks
+  return getUpdatedVoterPicks(losers, voterPicks.slice(1))
+}
+// {} -> {} 
+function getCountObj (votesObj) {
   // [``]
   const topVotes = getTopVotes(votesObj)
-  // // {}
+  // {}
   const countObj = topVotes.reduce((acc, str) => {
     if (acc[str]) return { ...acc, [str]: acc[str]+1 }
     return { ...acc, [str]: 1 }
@@ -74,8 +80,8 @@ function updateVoteString (votesObj) {
   return countObj
 }
 // {} -> [``]
-function getTopVotes (votes) {
-  return Object.keys(votes).map(key => votes[key][0])
+function getTopVotes (votesObj) {
+  return Object.keys(votesObj).map(key => votesObj[key][0])
 }
 // [``] -> ``
 function getWinner (groupedVotes, totalVotes) {
