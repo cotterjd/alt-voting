@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="startVote()">Start vote</button>
+    <button @click="startVote()">Simulate Round {{round}}</button>
     <div style="display: flex">
       <hello v-for="key in Object.keys(votes)" :voter="key" :picks="votes[key]" />
     </div>
@@ -20,7 +20,9 @@ export default {
   },
   data: () => ({
     winner: ``,
+    round: 1,
     votes: {},
+    VoteString: ``,
   }),
   mounted () {
     this.votes = {
@@ -46,14 +48,30 @@ export default {
       }, {})
     },
     startVote () {
-      setTimeout(() => {
+      // setTimeout(() => {
         if (!this.winner) {
-          this.votes = this.calcVotes(this.votes)
-          this.startVote()
+          this.round = this.round + 1
+          // const countObj = updateVoteString(newVotes)
+          // console.log(countObj)
+          const newVotes = this.calcVotes(this.votes)
+          this.votes = newVotes
+          // this.startVote()
         }
-      }, 1000)
-    }
+      // }, 2000)
+    },
+    // {} -> `` 
   }
+}
+// {} -> `` 
+function updateVoteString (votesObj) {
+  // [``]
+  const topVotes = getTopVotes(votesObj)
+  // // {}
+  const countObj = topVotes.reduce((acc, str) => {
+    if (acc[str]) return { ...acc, [str]: acc[str]+1 }
+    return { ...acc, [str]: 1 }
+  }, {})
+  return countObj
 }
 // {} -> [``]
 function getTopVotes (votes) {
