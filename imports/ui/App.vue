@@ -44,6 +44,7 @@ export default {
   },
   computed: {},
   methods: {
+    // TODO: fix not stopping after majority
     calcVotes (votesObj) {
       const topVotes = getTopVotes(votesObj)
       const [winner, losers] = getLowestAndHighest(topVotes)
